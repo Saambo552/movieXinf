@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>movieXinfo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: #0b0b0e;
+      color: #ffffff;
+      padding: 16px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #1f1f27;
+      margin-bottom: 16px;
+    }
+
+    .logo {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+
+    .logo span {
+      color: #e50914; /* Modern Red Accent */
+    }
+
+    .search-box {
+      margin-bottom: 20px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1px solid #2a2a35;
+      background-color: #16161e;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+    }
+
+    .search-box input:focus {
+      border-color: #e50914;
+    }
+
+    .movie-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card {
+      display: flex;
+      background: #16161e;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(229, 9, 20, 0.25);
+    }
+
+    .card img {
+      width: 100px;
+      height: 145px;
+      object-fit: cover;
+    }
+
+    .card-info {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .title {
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .meta {
+      font-size: 13px;
+      color: #aaa;
+    }
+
+    .rating {
+      color: #f5c518;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .loading {
+      text-align: center;
+      color: #e50914;
+      margin-top: 50px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">movie<span>X</span>info</div>
+  </header>
+
+  <!-- Search Box -->
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Search any movie..." onkeyup="searchMovies()" />
+  </div>
+
+  <div id="loader" class="loading">Loading Latest Movies...</div>
+  <div class="movie-list" id="movieList"></div>
+
+  <script>
+    // Configured API Key
+    const apiKey = "5df2cd534ac12efc28caf1f10db09582"; 
+
+    const movieList = document.getElementById("movieList");
+    const loader = document.getElementById("loader");
+    const searchInput = document.getElementById("searchInput");
+
+    // Fetch Latest Movies
+    async function fetchMovies() {
+      try {
+        const res = await fetch(`https://api.themoviedb.org/3/movie/now_playing?api_key=${apiKey}&language=en-US&page=1`);
+        const data = await res.json();
+        renderMovies(data.results);
+      } catch (err) {
+        loader.innerText = "Failed to load movies. Check internet connection.";
+      }
+    }
+
+    // Render Movies into HTML
+    function renderMovies(movies) {
+      movieList.innerHTML = "";
+      loader.style.display = "none";
+
+      if (!movies || movies.length === 0) {
+        loader.innerText = "No movies found.";
+        loader.style.display = "block";
+        return;
+      }
+
+      movies.forEach(movie => {
+        const poster = movie.poster_path 
+          ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` 
+          : 'https://via.placeholder.com/100x145?text=No+Poster';
+
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <img src="${poster}" alt="${movie.title}">
+          <div class="card-info">
+            <div class="title">${movie.title}</div>
+            <div class="meta">📅 Release: ${movie.release_date || 'N/A'}</div>
+            <div class="rating">⭐ ${movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A'} / 10</div>
+          </div>
+        `;
+        movieList.appendChild(card);
+      });
+    }
+
+    // Live Search Logic
+    async function searchMovies() {
+      const query = searchInput.value.trim();
+      if (query === "") {
+        fetchMovies();
+        return;
+      }
+
+      loader.style.display = "block";
+      loader.innerText = "Searching...";
+
+      try {
+        const res = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        renderMovies(data.results);
+      } catch (err) {
+        loader.innerText = "Search failed.";
+      }
+    }
+
+    // Initial Load
+    fetchMovies();
+  </script>
+</body>
+</html>
